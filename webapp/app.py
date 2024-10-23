@@ -12,7 +12,8 @@ from flask import Flask
 from flask import render_template
 from flask import request
 
-# sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from test import *
 
 # create web app instance
 app = Flask(__name__)
