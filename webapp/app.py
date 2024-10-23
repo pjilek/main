@@ -13,7 +13,7 @@ from flask import render_template
 from flask import request
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from test import *
+from qmover import get_move
 
 # create web app instance
 app = Flask(__name__)
@@ -36,9 +36,10 @@ def make_move():
     print("-----------------")
     
     if not board.is_checkmate():
+        # find the rooks
         rook_mask = board.pieces_mask(chess.ROOK, chess.BLACK)
         rook_set = chess.SquareSet(rook_mask)
-
+        # get attack map for each rook (bitboard of valid squares to move to)
         attack_sets = {}
         for rook in rook_set:
             attacks = board.attacks(rook)
@@ -49,19 +50,26 @@ def make_move():
 
             attack_sets.update({rook: attacks})
 
+        # play a QUANTUM move !!
         print(board.piece_map())
         for rook, attack in attack_sets.items():
             print(f"ROOK AT POS {rook}")
             print(attack)
+            print(hex(attack))
+            move = get_move(int(attack))
+            move_set = chess.SquareSet(move)
+            print(f" ---- QUANTUM SAYS -----")
+            print(move_set)
+            computer_move = chess.Move(rook, chess.Square(move))
 
-        #"""
+        """
         # play a random move
         for i in range(0, 1000):
             legal_moves = []
             for j in board.legal_moves:
                 legal_moves.append(j)
             computer_move = chess.Move.from_uci(str(random.choice(legal_moves)))
-        #"""
+        """
 
         # update internal python chess board state
         print(f"COMPUTER WILL PLAY {computer_move}")
