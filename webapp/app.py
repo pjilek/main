@@ -36,13 +36,23 @@ def make_move():
     print("-----------------")
     
     if not board.is_checkmate():
-        rook_map = board.pieces_mask(chess.ROOK, chess.BLACK)
-        rook_sq = chess.SquareSet(rook_map)
+        rook_mask = board.pieces_mask(chess.ROOK, chess.BLACK)
+        rook_set = chess.SquareSet(rook_mask)
 
-        for rook in rook_sq:
+        attack_sets = {}
+        for rook in rook_set:
+            attacks = board.attacks(rook)
+            for sq, piece in board.piece_map().items():
+                if sq in attacks:
+                    if piece.color == chess.BLACK:
+                        attacks.discard(sq)
+
+            attack_sets.update({rook: attacks})
+
+        print(board.piece_map())
+        for rook, attack in attack_sets.items():
             print(f"ROOK AT POS {rook}")
-            print(board.attacks(rook))
-            print(board.piece_map())
+            print(attack)
 
         #"""
         # play a random move
