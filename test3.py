@@ -71,12 +71,14 @@ def build_cqm(attack_bitboards, opponent_bitboard, opponent_bitboards):
         for square in range(64):
             sqr_weight = 0
 
+            # Set weights to positions
             square_is_reachable = (bitboard >> square) & 1
             if square_is_reachable: 
                 piece_type, piece_loc = piece.split("@")
                 sqr_weight = pst[piece_type][square] - pst[piece_type][int(piece_loc)]
             else: continue
 
+            # Take opponents pieces
             opponent_in_square = (opponent_bitboard >> square) & 1
             if opponent_in_square:
                 for opponent_piece in opponent_bitboards.keys():
