@@ -16,63 +16,60 @@ def add_weight_quadratic(constraint_id, weight):
     else: quadratic[constraint_id] = weight
 
 # Reward squares that pieces can move to
-def apply_valid_squares():
+def apply_valid_squares(attack_bitboards):
     scale = 1
     
+    # deconstruct the dictionaries
+    #for key in attack_bitboards:
+        #for i in range(attack_bitboards[key])
+
+
     #ROOK
     for i in range(16):
         id = f'r{i}'
         sqr_is_valid = (valid_squares_rook >> (15-i)) & 1
         if sqr_is_valid == 1: add_weight_linear((id, id), -1 * scale)
-        else: add_weight_linear((id, id), 1 * scale)
 
     #KING
     for i in range(16):
         id = f'k{i}'
         sqr_is_valid = (valid_squares_king >> (15-i)) & 1
         if sqr_is_valid == 1: add_weight_linear((id, id), -1 * scale)
-        else: add_weight_linear((id, id), 1 * scale)
     
-
 # Make sure only one move is selected
 def add_n_pieces_constraint(n):
-    scale = 6
+    print(linear)
+    scale = 2
+    # loop through linear weights
+    keys = list(linear.keys())
 
-    board_size = 16
-    piece_prefixes = ['r', 'k']
-
-    for i in range(board_size * len(piece_prefixes)):
-        id = f'{piece_prefixes[i // board_size]}{i % 16}'
-        add_weight_linear((id, id), (-2*n + 1) * scale)
-        #print(f'linear: {(id, id)}')
-        
-        for j in range(i+1, board_size * len(piece_prefixes)):
-            id2 = f'{piece_prefixes[j // board_size]}{j % 16}'
-            add_weight_quadratic((id, id2), 2 * scale)
-            #print(f'quadratic: {(id, id2)}')
+    for i in range(len(keys)):
+        id1 = keys[i][0]
+        add_weight_linear((id1, id1), (-2*n + 1) * scale)
+        print((id1, id1))
+        for j in range(i + 1, len(keys)):
+            id2 = keys[j][0]
+            add_weight_quadratic((id1, id2), 2 * scale)
+            print((id1, id2))
 
 def parse_output(qubo_output):
     output = []
     for el in qubo_output.record:
         output = output + [el[0].tolist()]
     output = qubo_output.record[0][0].tolist()
-    print(output)
+    print(qubo_output.variables)
 
-    #convert to int
-    result = 0
-    for i in range(len(output)):
-        j = len(output) - 1 - i
-        result += output[j] * 2**i
-    print(result)
-    print(bin(result))
-    return result
+    for i, label in enumerate(qubo_output.variables):
+        bit = output[i]
+        if bit: return label
 
-def get_move():
-    apply_valid_squares()
+# attackbitboards is a dictionary of form: key: 'r' value: 64bit integer
+def get_move(attack_bitboards):
+    apply_valid_squares(attack_bitboards)
     add_n_pieces_constraint(1)
     Q = {**linear, **quadratic}
-    sampleset = sampler.sample_qubo(Q, num_reads=500)
+    sampleset = sampler.sample_qubo(Q, num_reads=50)
     print(sampleset)
     return parse_output(sampleset)
 
-get_move()
+print(get_move())
