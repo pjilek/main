@@ -14,7 +14,7 @@ from flask import request
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from test3 import get_move
-from qmover import gen_attack_bitboards
+from qmover import gen_attack_bitboards, gen_move_bitboards
 
 # create web app instance
 app = Flask(__name__)
@@ -37,7 +37,7 @@ def make_move():
     print("-----------------")
     
     if not board.is_checkmate():
-        attack_sets = gen_attack_bitboards(board, chess.BLACK)
+        attack_sets = gen_move_bitboards(board, chess.BLACK)
         print("attack sets from app")
         print(attack_sets)
         # generate OR'd attack map of human pieces
