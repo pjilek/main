@@ -7,7 +7,7 @@ def add_weight_linear(constraint_id, weight):
     if constraint_id in linear: linear[constraint_id] += weight
     else: linear[constraint_id] = weight
 def add_weight_quadratic(constraint_id, weight):
-    if constraint_id in linear: quadratic[constraint_id] += weight
+    if constraint_id in quadratic: quadratic[constraint_id] += weight
     else: quadratic[constraint_id] = weight
 
 def apply_valid_squares(valid_squares):
