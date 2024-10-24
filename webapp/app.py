@@ -13,7 +13,7 @@ from flask import render_template
 from flask import request
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from qmover import get_move
+from test2 import get_move
 
 # create web app instance
 app = Flask(__name__)
@@ -36,34 +36,44 @@ def make_move():
     print("-----------------")
     
     if not board.is_checkmate():
-        # find the rooks
-        rook_mask = board.pieces_mask(chess.ROOK, chess.BLACK)
-        rook_set = chess.SquareSet(rook_mask)
-        # get attack map for each rook (bitboard of valid squares to move to)
         attack_sets = {}
-        for rook in rook_set:
-            attacks = board.attacks(rook)
-            for sq, piece in board.piece_map().items():
-                if sq in attacks:
-                    if piece.color == chess.BLACK:
-                        attacks.discard(sq)
+        for piece_type in chess.PIECE_TYPES:
+            # find the rooks
+            black_mask = board.pieces_mask(piece_type, chess.BLACK)
+            black_set = chess.SquareSet(black_mask)
+            # get attack map for each rook (bitboard of valid squares to move to)
+            for piece in black_set:
+                attacks = board.attacks(piece)
+                for sq, opposing_piece in board.piece_map().items():
+                    if sq in attacks:
+                        if opposing_piece.color == chess.BLACK:
+                            attacks.discard(sq)
 
-            attack_sets.update({rook: attacks})
+                attack_sets.update({chess.piece_symbol(piece_type): int(attacks)})
+        print("attack sets from app")
+        print(attack_sets)
+        # generate OR'd attack map of human pieces
+        white_mask = 0
+        for piece_type in chess.PIECE_TYPES:
+            white_mask = white_mask | board.pieces_mask(piece_type, chess.WHITE)
+        white_set = chess.SquareSet(white_mask)
+        avoid_mask = 0
+        for piece in white_set:
+            attacks = board.attacks(piece)
+            avoid_mask = avoid_mask | int(attacks)
+        avoid_set = chess.SquareSet(avoid_mask)
+        # print("SQARES TO AVOID")
+        # print(avoid_set)
 
         # play a QUANTUM move !!
-        print(board.piece_map())
-        for rook, attack in attack_sets.items():
-            print(f"ROOK AT POS {rook}")
-            print(attack)
-            print(hex(attack))
-            move = get_move(int(attack))
-            move_set = chess.SquareSet(move)
-            print(f" ---- QUANTUM SAYS -----")
-            print(hex(move))
-            print(move_set)
-            move_bit = move.bit_length() - 1
-            print("move bit is", move_bit)
-            computer_move = chess.Move(rook, chess.Square(move_bit))
+        piece_and_move = get_move(attack_sets)
+        piece, move = piece_and_move[0], int(piece_and_move[1:])
+        # move_set = chess.SquareSet(move)
+        print(f" ---- QUANTUM SAYS -----")
+        print(piece, "to", move)
+        piece = board.pieces_mask(chess.Piece.from_symbol(piece).piece_type, chess.BLACK)
+        piece = piece.bit_length() - 1
+        computer_move = chess.Move(piece, chess.Square(move))
 
         """
         # play a random move
