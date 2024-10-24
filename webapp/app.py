@@ -13,7 +13,8 @@ from flask import render_template
 from flask import request
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from test2 import get_move
+from test3 import get_move
+from qmover import gen_attack_bitboards
 
 # create web app instance
 app = Flask(__name__)
@@ -36,20 +37,7 @@ def make_move():
     print("-----------------")
     
     if not board.is_checkmate():
-        attack_sets = {}
-        for piece_type in chess.PIECE_TYPES:
-            # find the rooks
-            black_mask = board.pieces_mask(piece_type, chess.BLACK)
-            black_set = chess.SquareSet(black_mask)
-            # get attack map for each rook (bitboard of valid squares to move to)
-            for piece in black_set:
-                attacks = board.attacks(piece)
-                for sq, opposing_piece in board.piece_map().items():
-                    if sq in attacks:
-                        if opposing_piece.color == chess.BLACK:
-                            attacks.discard(sq)
-
-                attack_sets.update({chess.piece_symbol(piece_type): int(attacks)})
+        attack_sets = gen_attack_bitboards(board, chess.BLACK)
         print("attack sets from app")
         print(attack_sets)
         # generate OR'd attack map of human pieces
@@ -69,13 +57,15 @@ def make_move():
         print("HUMAN PIECES ARE HERE")
         print(white_set)
         piece_and_move = get_move(attack_sets, white_mask)
-        piece, move = piece_and_move[0], int(piece_and_move[1:])
+        piece, move = piece_and_move.split('->')
+        move = int(move)
         # move_set = chess.SquareSet(move)
         print(f" ---- QUANTUM SAYS -----")
         print(piece, "to", move)
-        piece = board.pieces_mask(chess.Piece.from_symbol(piece).piece_type, chess.BLACK)
-        piece = piece.bit_length() - 1
-        computer_move = chess.Move(piece, chess.Square(move))
+        symbol, loc = piece.split('@')
+        #piece = board.pieces_mask(chess.Piece.from_symbol(piece).piece_type, chess.BLACK)
+        #piece = piece.bit_length() - 1
+        computer_move = chess.Move(chess.Square(loc), chess.Square(move))
 
         """
         # play a random move
