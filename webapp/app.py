@@ -66,7 +66,9 @@ def make_move():
         # print(avoid_set)
 
         # play a QUANTUM move !!
-        piece_and_move = get_move(attack_sets)
+        print("HUMAN PIECES ARE HERE")
+        print(white_set)
+        piece_and_move = get_move(attack_sets, white_mask)
         piece, move = piece_and_move[0], int(piece_and_move[1:])
         # move_set = chess.SquareSet(move)
         print(f" ---- QUANTUM SAYS -----")

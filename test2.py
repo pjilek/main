@@ -28,7 +28,7 @@ def apply_valid_squares(attack_bitboards, board_size):
 # Make sure only one move is selected
 def add_n_pieces_constraint(n):
     print("add_n_pieces_constraint")
-    scale = 4
+    scale = 10
     # loop through linear weights
     keys = list(linear.keys())
 
@@ -44,13 +44,16 @@ def add_n_pieces_constraint(n):
 def incentivise_taking(opponent_bitboard, board_size):
     piece_vals = {'r': 5, 'b': 3, 'q': 9, 'k': 100}
     
-    scale = 0.5
+    scale = 10
     # go through linear constraints, if the location is a 1 in opponent_bitboard, add reward
     for key in linear.keys():
         id = key[0]  #r12
         location = int(id[1:])  #12
         sqr_has_piece = (opponent_bitboard & (1 << location))
         if (sqr_has_piece > 0): add_weight_linear(key, -1 * scale)
+    
+    print("LINEAR WITH OPPONENT PIECE WEIGHTS")
+    print(linear)
 
 def parse_output(qubo_output):
     output = []
