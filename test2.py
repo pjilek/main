@@ -11,7 +11,7 @@ def add_weight_quadratic(constraint_id, weight):
     else: quadratic[constraint_id] = weight
 
 # Reward squares that pieces can move to
-def apply_valid_squares(attack_bitboards, board_size = 64):
+def apply_valid_squares(attack_bitboards, board_size):
     scale = 1
     
     # deconstruct the dictionaries
@@ -53,11 +53,10 @@ valid_squares_str_rook = "0111100010001000"
 valid_squares_str_king = "0000010010100100"
 valid_squares_rook = int(valid_squares_str_rook, 2)
 valid_squares_king = int(valid_squares_str_king, 2)
-
 attack_bitboards = {'r': valid_squares_rook, 'k': valid_squares_king}
 
 # attackbitboards is a dictionary of form: key: 'r' value: 64bit integer
-def get_move(attack_bitboards, board_size):
+def get_move(attack_bitboards, board_size = 64):
     apply_valid_squares(attack_bitboards, board_size)
     add_n_pieces_constraint(1)
     Q = {**linear, **quadratic}
