@@ -11,7 +11,7 @@ def gen_attack_bitboards(board : chess.Board, colour : chess.Color):
                 if s in attacks and p.color == colour:
                     attacks.discard(sq)
 
-        piece_id = f"{piece.symbol()}@{sq}"
-        attack_sets.update({piece_id: int(attacks)})
+            piece_id = f"{piece.symbol()}@{sq}"
+            attack_sets.update({piece_id: int(attacks)})
 
     return attack_sets
