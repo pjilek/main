@@ -25,6 +25,8 @@
             <div class="card-body">
               <!-- chess board view -->
               <div id="chess_board" class="mx-auto" style="width: 400px"></div>
+              <p></p>
+              <div id="status" class="mx-auto" style="width: 400px"></div>
             </div>
           </div>
         </div>
@@ -67,6 +69,8 @@
     // illegal move
     if (move === null) return 'snapback'
 
+    updateStatus()
+
     // make HTTP POST request to make move API
     $.post('/make_move', {'fen': game.fen()}, function(data) {
       // load fen into the current board state
@@ -74,9 +78,10 @@
       
       // update board position
       board.position(game.fen());
+
+      updateStatus()
     });
 
-    updateStatus()
   }
 
   // update the board position after the piece snap
@@ -105,7 +110,7 @@
 
     // game still on
     else {
-      status = moveColor + ' to move'
+      status = moveColor + ' to move ...'
 
       // check?
       if (game.in_check()) {
