@@ -59,8 +59,11 @@ def make_move():
             move = get_move(int(attack))
             move_set = chess.SquareSet(move)
             print(f" ---- QUANTUM SAYS -----")
+            print(hex(move))
             print(move_set)
-            computer_move = chess.Move(rook, chess.Square(move))
+            move_bit = move.bit_length() - 1
+            print("move bit is", move_bit)
+            computer_move = chess.Move(rook, chess.Square(move_bit))
 
         """
         # play a random move
