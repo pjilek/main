@@ -62,3 +62,14 @@ def gen_move_bitboards(board : chess.Board, colour : chess.Color):
             #print("--done (no friendly fire)--")
 
     return move_sets
+
+def gen_attackers_list(board : chess.Board, square : chess.Square):
+    wht = board.attackers(chess.WHITE, square)
+    blk = board.attackers(chess.BLACK, square)
+
+    attackers = []
+    for sq in [*wht, *blk]:
+        piece_id = f"{board.piece_at(sq).symbol()}@{sq}"
+        attackers.append(piece_id)
+    
+    return attackers
