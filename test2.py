@@ -24,7 +24,6 @@ def apply_valid_squares(attack_bitboards, board_size):
             id = f"{piece}{i}"
             sqr_is_valid = (bitboard & (1 << i))
             if sqr_is_valid: add_weight_linear((id, id), -1 * scale)
-    print(linear)
 
 # Make sure only one move is selected
 def add_n_pieces_constraint(n):
@@ -42,6 +41,17 @@ def add_n_pieces_constraint(n):
             add_weight_quadratic((id1, id2), 2 * scale)
             # print((id1, id2))
 
+def incentivise_taking(opponent_bitboard, board_size):
+    piece_vals = {'r': 5, 'b': 3, 'q': 9, 'k': 100}
+    
+    scale = 0.5
+    # go through linear constraints, if the location is a 1 in opponent_bitboard, add reward
+    for key in linear.keys():
+        id = key[0]  #r12
+        location = int(id[1:])  #12
+        sqr_has_piece = (opponent_bitboard & (1 << location))
+        if (sqr_has_piece > 0): add_weight_linear(key, -1 * scale)
+
 def parse_output(qubo_output):
     output = []
     for el in qubo_output.record:
@@ -54,16 +64,11 @@ def parse_output(qubo_output):
         bit = output[i]
         if bit: return label
 
-#valid_squares_str_rook = "0111100010001000"
-#valid_squares_str_king = "0000010010100100"
-#valid_squares_rook = int(valid_squares_str_rook, 2)
-#valid_squares_king = int(valid_squares_str_king, 2)
-#attack_bitboards = {'r': valid_squares_rook, 'k': valid_squares_king}
-
 # attackbitboards is a dictionary of form: key: 'r' value: 64bit integer
-def get_move(attack_bitboards, board_size = 64):
+def get_move(attack_bitboards, opponent_bitboard, board_size = 64):
     apply_valid_squares(attack_bitboards, board_size)
     add_n_pieces_constraint(1)
+    incentivise_taking(opponent_bitboard, board_size)
     Q = {**linear, **quadratic}
     sampleset = sampler.sample_qubo(Q, num_reads=500)
     #print(sampleset)
