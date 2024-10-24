@@ -27,7 +27,7 @@ def build_cqm(attack_bitboards, opponent_bitboard):
             square_is_reachable = (bitboard >> (square)) & 1 == 1
             if square_is_reachable: sqr_weight += -1
             opponent_in_square = (opponent_bitboard >> (square)) & 1 == 1
-            if opponent_in_square: obj += -1
+            if opponent_in_square: sqr_weight += -1
 
             if sqr_weight != 0:  
                 obj += sqr_weight * Binary(piece + str(square))
@@ -54,7 +54,7 @@ def parse_output(qubo_output):
         if bit: return label
 
 def get_move(attack_bitboards, opponent_bitboard, board_size = 64):
-    cqm = build_cqm(attack_bitboards)
+    cqm = build_cqm(attack_bitboards, opponent_bitboard)
     sampler = LeapHybridCQMSampler()
     sampleset = sampler.sample_cqm(cqm)
     print(sampleset)
