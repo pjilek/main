@@ -6,31 +6,30 @@ from dimod import (
 )
 from dwave.system import LeapHybridCQMSampler
 
-def valid_squares(attack_bitboards):
-    moves_list = []
-    for piece, bitboard in attack_bitboards.items():
-        for square in range(64):
-            if (bitboard >> (square)) & 1 == 1:
-                moves_list.append((piece, square))
-    return moves_list
-
-def build_cqm(attack_bitboards, opponent_bitboard):    
+# opponent_bitboards is a dictionary 'r' - bitboard
+def build_cqm(attack_bitboards, opponent_bitboard, opponent_bitboards):  
+    print(opponent_bitboards)  
     cqm = ConstrainedQuadraticModel()
     obj = BinaryQuadraticModel(vartype="BINARY")
 
     x = {}
+
+    piece_vals = {'K': 20, 'Q': 9, 'R': 5, 'N': 3, 'B': 3, 'P': 1}
+
     for piece, bitboard in attack_bitboards.items():
         for square in range(64):
             sqr_weight = 0
-            square_is_reachable = (bitboard >> (square)) & 1 >= 1
+            square_is_reachable = (bitboard >> square) & 1
             if square_is_reachable: sqr_weight -= 10
+            else: continue
 
-            if not square_is_reachable: continue
-
-            opponent_in_square = (opponent_bitboard >> (square)) & 1 >= 1
-            if opponent_in_square: sqr_weight -= 5
-
-            print(f"{piece}->{square} : {sqr_weight}")
+            opponent_in_square = (opponent_bitboard >> square) & 1
+            if opponent_in_square:
+                for opponent_piece in opponent_bitboards.keys():
+                    oppPiece, loc = opponent_piece.split("@")
+                    loc = int(loc)
+                    if loc == square:
+                        sqr_weight -= piece_vals[oppPiece]
 
             x[(piece, square)] = Binary(piece + "->" + str(square))
             obj += sqr_weight * x[(piece, square)]
@@ -50,8 +49,8 @@ def parse_output(qubo_output):
         bit = output[i]
         if bit: return label
 
-def get_move(attack_bitboards, opponent_bitboard):
-    cqm = build_cqm(attack_bitboards, opponent_bitboard)
+def get_move(attack_bitboards, opponent_bitboard, opponent_bitboards):
+    cqm = build_cqm(attack_bitboards, opponent_bitboard, opponent_bitboards)
     sampler = LeapHybridCQMSampler()
     sampleset = sampler.sample_cqm(cqm)
     feasible_sampleset = sampleset.filter(lambda row: row.is_feasible)
