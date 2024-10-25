@@ -57,7 +57,7 @@ def make_move():
         print("HUMAN PIECES ARE HERE")
         #print(white_set)
         white_bitboards = gen_attack_bitboards(board, chess.WHITE)
-        piece_and_move = get_move(attack_sets, white_mask, white_bitboards)
+        piece_and_move = get_move(attack_sets, white_mask, white_bitboards, board)
         piece, move = piece_and_move.split('->')
         move = int(move)
         # move_set = chess.SquareSet(move)

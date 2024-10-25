@@ -5,6 +5,7 @@ from dimod import (
     quicksum,
 )
 from dwave.system import LeapHybridCQMSampler
+from qmover import gen_attackers_list
 
 pst = {
     'p': (   0,   0,   0,   0,   0,   0,   0,   0,
@@ -58,24 +59,48 @@ pst = {
 }
 
 # opponent_bitboards is a dictionary 'r' - bitboard
-def build_cqm(attack_bitboards, opponent_bitboard, opponent_bitboards):  
+def build_cqm(attack_bitboards, opponent_bitboard, opponent_bitboards, board):  
     print(opponent_bitboards)  
     cqm = ConstrainedQuadraticModel()
     obj = BinaryQuadraticModel(vartype="BINARY")
 
     x = {}
 
-    piece_vals = {'K': 2000, 'Q': 900, 'R': 500, 'N': 300, 'B': 300, 'P': 100}
+    attack_defend_list = [0]*64
+    # piece_attack_defend_multipliers = {'k': -75, 'q': -150, 'r': -225, 'b': -300, 'n': -300, 'p': -250,
+    #                                    'K': 75, 'Q': 150, 'R': 225, 'B': 300, 'N': 300, 'P': 250}
+    piece_attack_defend_multipliers = {'k': -50, 'q': -50, 'r': -50, 'b': -50, 'n': -50, 'p': -50,
+                                       'K': 1000, 'Q': 1000, 'R': 1000, 'B': 1000, 'N': 1000, 'P': 1000}
 
+
+    for sqr in range(64):
+        # Decentivise moving to attacked spots
+        for opp_attack_piece, opp_attack_bitboard in opponent_bitboards.items():
+            square_is_attacked = (opp_attack_bitboard >> sqr) & 1 > 0
+            if square_is_attacked:
+                attack_defend_list[sqr] += piece_attack_defend_multipliers[opp_attack_piece.split("@")[0]]
+
+        # Incentivise moving to defended spots
+        for defend_piece, defend_bitboard in attack_bitboards.items():
+            square_is_defended = (defend_bitboard >> sqr) & 1 > 0
+            if square_is_defended:
+                attack_defend_list[sqr] += piece_attack_defend_multipliers[defend_piece.split("@")[0]]
+
+    piece_vals = {'K': 2000, 'Q': 900, 'R': 500, 'N': 300, 'B': 300, 'P': 100}
+    capturer_multiplier = {'k': 0.3, 'q': 0.5, 'r': 0.7, 'b': 0.8, 'n': 0.8, 'p': 1}
+    print(attack_defend_list)
     for piece, bitboard in attack_bitboards.items():
         for square in range(64):
             sqr_weight = 0
 
             # Set weights to positions
             square_is_reachable = (bitboard >> square) & 1
+            piece_type, piece_loc = piece.split("@")
             if square_is_reachable: 
-                piece_type, piece_loc = piece.split("@")
                 sqr_weight = pst[piece_type][square] - pst[piece_type][int(piece_loc)]
+                sqr_weight += attack_defend_list[square] #* capturer_multiplier[piece_type]
+                sqr_weight -= piece_attack_defend_multipliers[piece_type]
+                sqr_weight -= is_attacked_weight(int(piece_loc), piece_type, board)
             else: continue
 
             # Take opponents pieces
@@ -105,10 +130,32 @@ def parse_output(qubo_output):
         bit = output[i]
         if bit: return label
 
-def get_move(attack_bitboards, opponent_bitboard, opponent_bitboards):
-    cqm = build_cqm(attack_bitboards, opponent_bitboard, opponent_bitboards)
+def get_move(attack_bitboards, opponent_bitboard, opponent_bitboards, board):
+    cqm = build_cqm(attack_bitboards, opponent_bitboard, opponent_bitboards, board)
     sampler = LeapHybridCQMSampler()
     sampleset = sampler.sample_cqm(cqm)
     feasible_sampleset = sampleset.filter(lambda row: row.is_feasible)
     print(feasible_sampleset)
     return parse_output(feasible_sampleset)
+
+def is_attacked_weight(square, piece_type, board):
+    piece_vals = {'K': 2000, 'Q': 900, 'R': 500, 'N': 300, 'B': 300, 'P': 100, 'k': 20000, 'q': 20000, 'r': 20000, 'n': 20000, 'b': 20000, 'p': 20000 }
+    victim_vals = {'k': 2000, 'q': 900, 'r': 500, 'n': 300, 'b': 300, 'p': 100}
+    list_of_attackers = gen_attackers_list(board, square)
+    
+    weakest_attacker_val = 3000
+    defended = False
+    for attacker in list_of_attackers:
+        attacker_type = attacker.split('@')[0]
+        if piece_vals[attacker_type] < weakest_attacker_val:
+            weakest_attacker_val = piece_vals[attacker_type]
+        if piece_vals[attacker_type] == 20000:
+            defended  = True
+
+    if (weakest_attacker_val == 3000): return 0
+    if not defended: return victim_vals[piece_type]
+
+    if weakest_attacker_val < victim_vals[piece_type]: # if we are more valuable than attacking piece
+        if defended: return (victim_vals[piece_type] -  weakest_attacker_val)
+    else: return 0
+        
